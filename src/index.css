@@ -1,0 +1,309 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Special+Gothic+Expanded+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Special+Gothic+Expanded+One&display=swap');
+
+/* Montserrat Font Faces */
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Root Variables */
+:root {
+  --font-primary: 'Montserrat', sans-serif;
+  
+  /* Font Weights */
+  --font-thin: 100;
+  --font-extralight: 200;
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
+}
+
+/* Base Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Montserrat";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utility Classes */
+.font-300 { font-weight: var(--font-light);font-family: var(--font-primary); }
+.font-400 { font-weight: var(--font-regular);font-family: var(--font-primary); }
+.font-500 { font-weight: var(--font-medium);font-family: var(--font-primary); }
+.font-600 { font-weight: var(--font-semibold);font-family: var(--font-primary); }
+.bold-700 { font-weight: var(--font-bold);font-family: var(--font-primary); }
+.extrabold-800 { font-weight: var(--font-extrabold);font-family: var(--font-primary); }
+
+
+/* Add these @font-face rules for Cormorant */
+@font-face {
+  font-family: 'Cormorant';
+  src: url('./assets/fonts/Cormorant-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cormorant';
+  src: url('./assets/fonts/Cormorant-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cormorant';
+  src: url('./assets/fonts/Cormorant-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cormorant';
+  src: url('./assets/fonts/Cormorant-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cormorant';
+  src: url('./assets/fonts/Cormorant-Bold.ttf') format('truetype');
+  
+}
+
+/* Add utility classes for Cormorant */
+.font-cormorant {
+  font-family: 'Cormorant', serif;
+}
+
+/* Font weight utilities */
+.font-cormorant-light { font-weight: 300; }
+.font-cormorant-regular { font-weight: 400; }
+.font-cormorant-medium { font-weight: 500; }
+.font-cormorant-semibold { font-weight: 600; }
+.font-cormorant-bold { font-weight: 700; }
+
+
+
+ @media (max-width: 576px) {
+         .sec-title,.villa-heading,.experience-title{
+          text-align: left;
+          font-size: 24px !important;
+          line-height: 28px !important;
+          /* font-weight: var(--font-medium) !important; */
+          /* display: none; */
+         }
+         .pn-card-title{
+          font-size: 18px !important;
+          text-align: left;
+
+         }
+         .experience-text{
+          text-align: left;
+         }
+        }
+
+
+.form-check-input:checked{
+background-color: #2A2A2A !important;
+border-color: #DFDFDF !important;
+}
+      
+ 
+.form-check-input:focus {
+    border-color: #DFDFDF !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    /* box-shadow: 0 0 0 0.25rem #2A2A2A !important; */
+}
+
+.css-jj122v{
+  flex-direction: column !important;
+  max-width: 100% !important;
+}
+.css-hd63sv label{
+  max-width: 400px !important;
+  position: absolute !important;
+  top: -25px !important;
+  left: 0 !important;
+  text-transform: capitalize !important;
+   font-family: 'Montserrat' !important;
+  font-weight: 400 !important;
+  font-size: 16px !important;
+  color: #5D5D5D !important;
+
+  
+}
+.css-mu0s7e::after{
+  position: absolute !important;
+   top: -25px !important;
+  left: 0 !important;
+  text-transform: capitalize !important;
+    font-family: 'Montserrat' !important;
+  font-weight: 400 !important;
+  font-size: 16px !important;
+  color: #5D5D5D !important;
+
+
+  
+}
+.css-1h2fvt2{
+  position: relative !important;
+  margin-top: 50px !important;
+}
+.css-hd63sv{
+  outline: none !important;
+  border: 1.4px solid #E0E0E0 !important;
+   font-family: 'Montserrat' !important;
+  font-weight: 400 !important;
+  background-color: transparent !important;
+
+
+  
+}
+
+.css-hd63sv > p{
+  /* color: red !important; */
+}
+.css-hd63sv .date{
+  display: inline-block !important;
+}
+
+.css-hd63sv.right{
+  border-radius: 0px !important;
+
+}
+.css-hd63sv.left{
+  border-radius: 0px !important;
+
+}
+.css-hd63sv{
+  min-height: 50px !important;
+}
+.css-1h2fvt2{
+  border-radius: 0px !important;
+  height: 50px !important;
+  border: 1.4px solid #E0E0E0 !important;
+ 
+
+
+}
+.css-1jsxl5eP{
+  font-family: 'Montserrat' !important;
+  font-weight: 500 !important;
+  background-color: transparent !important;
+}
+
+.css-khkv60{
+  gap: 10px !important;
+  outline: none !important;
+  border: 0px solid !important;
+}
+
+.css-khkv60:focus{
+  box-shadow: none !important;
+}
+
+.portable-search-bar{
+ 
+
+}
+
+.css-13bifmc.styled-override{
+  height: 50px !important;
+  display: flex !important;
+  width: 100% !important;
+  flex: none !important;
+  font-family: 'Montserrat' !important;
+  font-weight: 400 !important;
+
+
+}
+
+.css-1k396i{
+  background-color: transparent !important;
+}
+.css-1jsxl5e{
+  background-color: transparent !important;
+}
+
+.css-13bifmc.primary{
+  color: white !important;
+}
