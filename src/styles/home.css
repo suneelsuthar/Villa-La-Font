@@ -98,6 +98,9 @@
 
 /* === Responsive === */
 @media (max-width: 991px) {
+    .languages_btn{
+    display: none;
+  }
   .info-card{
     height: 133px;
 
@@ -989,7 +992,7 @@ border: 1px solid #E8E6E1 !important;
 }
 
 @media (max-width: 767px) {
-  
+
   .react-calendar__tile {
   aspect-ratio: 1;
    min-height: auto !important;

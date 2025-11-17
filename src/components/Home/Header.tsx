@@ -224,7 +224,8 @@ const Header = () => {
             </Nav>
 
             {/* Right Side - Buttons */}
-            <Nav className="ms-auto align-items-center">
+          </Navbar.Collapse>
+            <Nav className="ms-auto align-items-center languages_btn">
               {/* Language Selector */}
               <div className="language-dropdown position-relative">
                 <button
@@ -370,7 +371,6 @@ const Header = () => {
                 )}
               </div>
             </Nav>
-          </Navbar.Collapse>
         </Container>
       </Navbar>
       {/* FULLSCREEN MOBILE MENU */}
