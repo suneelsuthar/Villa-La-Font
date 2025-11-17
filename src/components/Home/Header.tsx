@@ -6,7 +6,6 @@ import { useAppContext } from "../../context/AppContext";
 
 import headerLogo from "/src/assets/images/headerLogo.png";
 const Header = () => {
-  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -63,9 +62,6 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
   // Handle clicks outside the language dropdown
-  const isActive = (path: string) => {
-    return location.pathname === path || location.hash === path;
-  };
 
   // Handle clicks outside the language & currency dropdowns
   useEffect(() => {
@@ -149,8 +145,9 @@ const Header = () => {
             <img
               src={headerLogo}
               alt="Villa La Font"
-              height="51"
+              height="40"
               className="headerLogo"
+              style={{ transition: "height 0.3s ease" }}
             />
           </Navbar.Brand>
           {/* Hamburger */}
@@ -224,64 +221,6 @@ const Header = () => {
               >
                 Contact Us
               </Nav.Link>
-
-              <NavDropdown
-                title={
-                  <span className="d-flex align-items-center">
-                    All Properties
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="8"
-                      viewBox="0 0 12 8"
-                      fill="none"
-                      className={`ms-1 transition-transform ${
-                        isPropertiesOpen ? "rotate-180" : ""
-                      }`}
-                    >
-                      <path
-                        d="M1 1.5L6 6.5L11 1.5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                }
-                id="properties-dropdown"
-                // className="mx-3"
-                show={isPropertiesOpen}
-                onMouseEnter={() => setIsPropertiesOpen(true)}
-                onMouseLeave={() => setIsPropertiesOpen(false)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsPropertiesOpen(!isPropertiesOpen);
-                }}
-                renderMenuOnMount={true}
-              >
-                <NavDropdown.Item
-                  as={Link}
-                  to="#"
-                  className={isActive("/properties/villa-1") ? "active" : ""}
-                >
-                  Villa 1
-                </NavDropdown.Item>
-                <NavDropdown.Item
-                  as={Link}
-                  to="#"
-                  className={isActive("/properties/villa-2") ? "active" : ""}
-                >
-                  Villa 2
-                </NavDropdown.Item>
-                <NavDropdown.Item
-                  as={Link}
-                  to="#"
-                  className={isActive("/properties/villa-3") ? "active" : ""}
-                >
-                  Villa 3
-                </NavDropdown.Item>
-              </NavDropdown>
             </Nav>
 
             {/* Right Side - Buttons */}

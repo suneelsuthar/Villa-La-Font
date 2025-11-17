@@ -170,20 +170,6 @@ const Footer: React.FC = () => {
                   </ul>
                 </Col>
 
-                {/* Contact */}
-                <Col sm={4}>
-                  <h6 className="f-link-title">Contact Us</h6>
-                  <ul className="f-list">
-                    <li>
-                      <a href="tel:+1234568900">+1 (234) 568900</a>
-                    </li>
-                    <li>
-                      <a href="mailto:contact@villastrias.com">
-                        contact@villastrias.com
-                      </a>
-                    </li>
-                  </ul>
-                </Col>
               </Row>
             </div>
           </Col>
@@ -196,7 +182,7 @@ const Footer: React.FC = () => {
       <Container>
         <div className="f-bottom pb-2">
           <p className="f-copy">
-            © {new Date().getFullYear()} Villas Trias. All rights reserved.
+            © {new Date().getFullYear()} Villa La Font. All rights reserved.
           </p>
 
           <div className="f-terms">

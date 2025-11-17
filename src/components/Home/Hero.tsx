@@ -5,6 +5,14 @@ import { Button } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import calendarIcon from "/src/assets/images/calendar.png";
 import { useAppContext } from "../../context/AppContext";
+import { DateRangePicker } from "rsuite";
+type AvailabilityPeriod = {
+  start: string;
+  end: string;
+  available: number;
+  closed_period: { id: number } | null;
+  bookings: Array<{ id: number; status: string }>;
+};
 /* ---------- SplitText Utility ---------- */
 const SplitText = ({
   text,
@@ -38,23 +46,81 @@ const SplitText = ({
 };
 
 const Hero = () => {
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(1);
-  const { currency, language } = useAppContext();
+  const [range, setRange] = useState<any>([null, null]);
+  const { currency, language, availabilities } = useAppContext();
   const [nights, setNights] = useState(0);
-
+  const [checkInDate, setCheckInDate] = useState<any>(null);
+  const [checkOutDate, setCheckOutDate] = useState<any>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   useEffect(() => {
-    if (checkIn && checkOut) {
-      const start = new Date(checkIn);
-      const end = new Date(checkOut);
-      const diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    if (!availabilities || !availabilities[0]?.periods) return;
 
-      setNights(diff > 0 ? diff : 0);
+    const unavailable: Date[] = [];
+    const available: Date[] = [];
+    const booked: Date[] = [];
+
+    availabilities[0].periods.forEach((period: AvailabilityPeriod) => {
+      const start = new Date(period.start);
+      const end = new Date(period.end);
+
+      // Loop through each date in range
+      const loopEnd = new Date(end);
+      loopEnd.setDate(loopEnd.getDate() + 1);
+
+      const hasBookings = period.bookings?.length > 0;
+
+      for (let d = new Date(start); d < loopEnd; d.setDate(d.getDate() + 1)) {
+        const day = new Date(d);
+
+        if (hasBookings) {
+          booked.push(day);
+          unavailable.push(day);
+        } else if (period.available === 0 || period.closed_period) {
+          unavailable.push(day);
+        } else {
+          available.push(day);
+        }
+      }
+    });
+
+    setUnavailableDates(unavailable);
+  }, [availabilities]);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const countAvailableNights = (startDate: Date, endDate: Date): number => {
+    let count = 0;
+    const current = new Date(startDate);
+
+    // Loop through each day in the range
+    while (current <= endDate) {
+      const dateString = current.toISOString().split("T")[0];
+      const isAvailable = !unavailableDates.some(
+        (d) => d.toISOString().split("T")[0] === dateString
+      );
+
+      if (isAvailable) {
+        count++;
+      }
+
+      current.setDate(current.getDate() + 1);
     }
-  }, [checkIn, checkOut]);
 
+    return count - 1; // Subtract 1 because we're counting nights, not days
+  };
 
+  const formatDateForLodgify = (dateString: string): string => {
+    if (!dateString) return "";
+    return dateString;
+  };
   return (
     <section
       className="hero-section position-relative"
@@ -124,69 +190,138 @@ const Hero = () => {
 
               <div className="row">
                 {/* CHECK-IN */}
-                <div className="col-md-6 col-lg-6 col-xl-6 col-sm-12 mb-3">
-                  <label className="h-form-label">Check-in</label>
-                  <div
-                    className="h-input-container d-flex align-items-center justify-content-between"
-                    onClick={() =>
-                      document.getElementById("checkInInput")?.click()
-                    }
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <img src={calendarIcon} alt="" height={24} width={24} />
-                      <span
-                        style={{
-                          color: checkIn ? "#FFF" : "#D7D7D7",
-                        }}
-                      >
-                        {checkIn
-                          ? new Date(checkIn).toLocaleDateString()
-                          : "dd-mm-yyyy"}
-                      </span>
-                    </div>
-                    <input
-                      id="checkInInput"
-                      type="date"
-                      className="h-input"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]} // Prevent selecting past dates
+                <div className="col-md-6 mb-3">
+                  <label className="h-form-label" style={{ color: "#ffffff" }}>
+                    Check-in
+                  </label>
+                  <div className="res_field_sec">
+                    <p
+                      className={
+                        checkInDate ? "_res_inpu_value" : "place_res_inpu_value"
+                      }
+                      style={{ color: checkInDate ? "#ffffff" : "#D7D7D7" }}
+                    >
+                      {checkInDate ? checkInDate : "dd-mm-yyyy"}
+                    </p>
+                    <DateRangePicker
+                      showHeader={false}
+                      showMeridiem={false}
+                      ranges={[]}
+                      showOneCalendar={isMobile} // This will be true on mobile, false on desktop
+                      value={range}
+                      onChange={(date: any) => {
+                        const prevButton = document.querySelector(
+                          ".rs-calendar-header-backward"
+                        );
+                        console.log("Found:", prevButton);
+
+                        if (date && date[0] && date[1]) {
+                          const startDate = new Date(date[0]);
+                          const endDate = new Date(date[1]);
+
+                          // Count only available nights
+                          const availableNights = countAvailableNights(
+                            startDate,
+                            endDate
+                          );
+
+                          // Check if the range meets the minimum requirement
+                          // At least 6 days (5 nights)
+                          setRange([startDate, endDate]);
+                          setCheckInDate(startDate.toISOString().split("T")[0]);
+                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setNights(availableNights);
+                        } else {
+                          setRange(date);
+                        }
+                      }}
+                      disabledDate={(date) => {
+                        const dateString = date.toISOString().split("T")[0];
+
+                        const isUnavailable = unavailableDates.some(
+                          (d) => d.toISOString().split("T")[0] === dateString
+                        );
+
+                        const minDate = new Date();
+
+                        return date < minDate || isUnavailable;
+                      }}
+                      className="h-input-container d-flex align-items-center justify-content-between"
+                      format="dd-MM-yyyy"
+                      placeholder="dd-MM-yyyy"
+                      // disabledDate={disabledDate}
+                      cleanable={false}
+                      caretAs={() => (
+                        <img src={calendarIcon} height={24} width={24} />
+                      )}
                     />
                   </div>
                 </div>
 
                 {/* CHECK-OUT */}
-                <div className="col-md-6 col-lg-6 col-xl-6 col-sm-12 mb-3">
-                  <label className="h-form-label">Check-out</label>
-                  <div
-                    className="h-input-container d-flex align-items-center justify-content-between"
-                    onClick={() =>
-                      document.getElementById("checkOutInput")?.click()
-                    }
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <img src={calendarIcon} alt="" height={24} width={24} />
-                      <span
-                        style={{
-                          color: checkOut ? "#FFF" : "#D7D7D7",
-                        }}
-                      >
-                        {checkOut
-                          ? new Date(checkOut).toLocaleDateString()
-                          : "dd-mm-yyyy"}
-                      </span>
-                    </div>
-                    <input
-                      id="checkOutInput"
-                      type="date"
-                      className="h-input"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      min={checkIn || new Date().toISOString().split("T")[0]} // Can't select before check-in
+                <div className="col-md-6 mb-3">
+                  <label className="h-form-label" style={{ color: "#ffffff" }}>
+                    Check-out
+                  </label>
+                  <div className="res_field_sec">
+                    <p
+                      className={
+                        checkInDate ? "_res_inpu_value" : "place_res_inpu_value"
+                      }
+                      style={{ color: checkInDate ? "#ffffff" : "#D7D7D7" }}
+                    >
+                      {checkOutDate ? checkOutDate : "dd-mm-yyyy"}
+                    </p>
+                    <DateRangePicker
+                      showHeader={false}
+                      showMeridiem={false}
+                      value={range}
+                      placement="bottomEnd"
+                      showOneCalendar={isMobile} // This will be true on mobile, false on desktop
+                      onChange={(date: any) => {
+                        if (date && date[0] && date[1]) {
+                          const startDate = new Date(date[0]);
+                          const endDate = new Date(date[1]);
+
+                          // Count only available nights
+                          const availableNights = countAvailableNights(
+                            startDate,
+                            endDate
+                          );
+
+                          setRange([startDate, endDate]);
+                          setCheckInDate(startDate.toISOString().split("T")[0]);
+                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setNights(availableNights);
+                        } else {
+                          setRange(date);
+                        }
+                      }}
+                      // onChange={setCheckOutDate}
+                      className="h-input-container d-flex align-items-center justify-content-between"
+                      format="dd-MM-yyyy"
+                      placeholder="dd-MM-yyyy"
+                      disabledDate={(date) => {
+                        const dateString = date.toISOString().split("T")[0];
+
+                        const isUnavailable = unavailableDates.some(
+                          (d) => d.toISOString().split("T")[0] === dateString
+                        );
+
+                        const minDate = new Date();
+
+                        return date < minDate || isUnavailable;
+                      }}
+                      cleanable={false}
+                      caretAs={() => (
+                        <img src={calendarIcon} height={24} width={24} />
+                      )}
                     />
                   </div>
                 </div>
               </div>
+
+              {/* CHECK-IN */}
 
               {/* --- GUESTS FIELD --- */}
               <div className="mb-4">
@@ -206,17 +341,22 @@ const Hero = () => {
                   <button
                     type="button"
                     className="guest-btn"
-                    onClick={() => setGuests(guests + 1)}
+                    onClick={() => setGuests((prev) => Math.min(8, prev + 1))}
+                    disabled={guests >= 8}
                   >
                     +
                   </button>
                 </div>
+                {guests >= 8 && (
+                  <small className="text-white mt-1 d-block">
+                    Maximum 8 guests allowed
+                  </small>
+                )}
               </div>
 
               {/* --- Nights + Price --- */}
               <div className="d-flex justify-content-between align-items-center pt-3 pb-4">
                 <span className="h-form-label">{nights} Nights</span>
-                {/* <span className="h-form-price">${price}</span> */}
               </div>
 
               {/* CTA BUTTON */}
@@ -225,12 +365,15 @@ const Hero = () => {
                 size="lg"
                 className="h-form-booknow mb-4"
                 onClick={() => {
-                  if (!checkIn || !checkOut || guests < 1) {
+                  if (!checkInDate || !checkOutDate || guests < 1) {
                     alert("Please fill in all required fields");
                     return;
                   }
 
-                  const url = `https://checkout.lodgify.com/${language}/villastrias/506741/reservation?adults=1&currency=${currency}&slug=villastrias&arrival=${checkIn}&departure=${checkOut}`;
+                  const formattedCheckIn = formatDateForLodgify(checkInDate);
+                  const formattedCheckOut = formatDateForLodgify(checkOutDate);
+
+                  const url = `https://checkout.lodgify.com/${language}/villastrias/506741/reservation?adults=${guests}&currency=${currency}&slug=villastrias&arrival=${formattedCheckIn}&departure=${formattedCheckOut}`;
 
                   window.open(url);
                 }}
@@ -317,7 +460,7 @@ const Hero = () => {
         .h-input-container {
   border: 1px solid rgba(169, 169, 169, 1);
   height: 54px !important;
-  padding: 0 15px;
+  // padding: 0 15px;
   position: relative;
   cursor: pointer;
   border-radius: 0x;

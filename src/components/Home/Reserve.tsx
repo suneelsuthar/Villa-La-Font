@@ -5,9 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "react-bootstrap";
 import calendarIcon from "/src/assets/images/calendar2.png";
 import { useAppContext } from "../../context/AppContext";
-/* -------------------------------------------------
-   Types
--------------------------------------------------- */
+import { DateRangePicker } from "rsuite";
 type AvailabilityPeriod = {
   start: string;
   end: string;
@@ -22,18 +20,18 @@ type AvailabilityPeriod = {
 const Reserve = () => {
   const { availabilities } = useAppContext();
   const { currency, language } = useAppContext();
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Date state
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [bookedDates, setBookedDates] = useState<Date[]>([]);
-
-  // Booking form
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
+  const [openPicker, setOpenPicker] = useState(false);
+  const [range, setRange] = useState<any>([null, null]);
+  const [checkInDate, setCheckInDate] = useState<any>(null);
+  const [checkOutDate, setCheckOutDate] = useState<any>(null);
   const [guests, setGuests] = useState(1);
-
-  // Cost calculation
   const [nights, setNights] = useState(0);
 
   /* -------------------------------------------------
@@ -75,7 +73,14 @@ const Reserve = () => {
     setUnavailableDates(unavailable);
     setAvailableDates(available);
   }, [availabilities]);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
 
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   /* -------------------------------------------------
      Calendar Styling Helpers
   -------------------------------------------------- */
@@ -126,25 +131,41 @@ const Reserve = () => {
     );
   };
 
-  /* -------------------------------------------------
-     Calculate price when dates change
-  -------------------------------------------------- */
-  useEffect(() => {
-    if (!checkIn || !checkOut) return;
+  const disabledDate = (date: Date) => {
+    const dateString = date.toISOString().split("T")[0];
+    const isUnavailable = unavailableDates.some(
+      (d) => d.toISOString().split("T")[0] === dateString
+    );
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time part to compare dates only
+    return date < today || date.getFullYear() < 2025 || isUnavailable;
+  };
 
-    const start = new Date(checkIn);
-    const end = new Date(checkOut);
+  const countAvailableNights = (startDate: Date, endDate: Date): number => {
+    let count = 0;
+    const current = new Date(startDate);
 
-    const diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    // Loop through each day in the range
+    while (current <= endDate) {
+      const dateString = current.toISOString().split("T")[0];
+      const isAvailable = !unavailableDates.some(
+        (d) => d.toISOString().split("T")[0] === dateString
+      );
 
-    setNights(diff > 0 ? diff : 0);
-  }, [checkIn, checkOut]);
+      if (isAvailable) {
+        count++;
+      }
 
-  /* -------------------------------------------------
-     UI
-  -------------------------------------------------- */
+      current.setDate(current.getDate() + 1);
+    }
 
-  console.log(checkIn);
+    return count - 1; // Subtract 1 because we're counting nights, not days
+  };
+
+  const formatDateForLodgify = (dateString: string): string => {
+    if (!dateString) return "";
+    return dateString;
+  };
   return (
     <section className="res-section text-light py-5" id="reserve">
       <h2 className="sec-title mb-3 text-center">RESERVE YOUR ESCAPE</h2>
@@ -203,35 +224,85 @@ const Reserve = () => {
                 Balearic Islands, Spain
               </p>
 
+              <DateRangePicker
+                ranges={[]}
+                open={openPicker}
+                onOpen={() => setOpenPicker(true)}
+                onClose={() => setOpenPicker(false)}
+                value={range}
+                onChange={(value) => {
+                  setRange(value);
+                  if (value && value[0] && value[1]) {
+                    setOpenPicker(false);
+                  }
+                }}
+                format="dd-MM-yyyy"
+                style={{ display: "none" }} // keep hidden
+              />
               <div className="row">
                 {/* CHECK-IN */}
                 <div className="col-md-6 mb-3">
                   <label className="h-form-label" style={{ color: "#5D5D5D" }}>
                     Check-in
                   </label>
+                  <div className="res_field_sec">
+                    <p
+                      className={
+                        checkInDate ? "_res_inpu_value" : "place_res_inpu_value"
+                      }
+                    >
+                      {checkInDate ? checkInDate : "Date"}
+                    </p>
+                    <DateRangePicker
+                      showHeader={false}
+                      showMeridiem={false}
+                      ranges={[]}
+                      showOneCalendar={isMobile} // This will be true on mobile, false on desktop
+                      value={range}
+                      open={isCalendarOpen}
+                      onOpen={() => setIsCalendarOpen(true)}
+                      onClose={() => setIsCalendarOpen(false)}
+                      onChange={(date: any) => {
+                        if (date && date[0] && date[1]) {
+                          const startDate = new Date(date[0]);
+                          const endDate = new Date(date[1]);
 
-                  <div
-                    className="h-input-container d-flex align-items-center justify-content-between"
-                    onClick={() =>
-                      document.getElementById("checkInInput")?.click()
-                    }
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <img src={calendarIcon} height={24} width={24} />
-                      <span style={{ color: checkIn ? "#000" : "#5D5D5D" }}>
-                        {checkIn
-                          ? new Date(checkIn).toLocaleDateString()
-                          : "dd-mm-yyyy"}
-                      </span>
-                    </div>
+                          // Count only available nights
+                          const availableNights = countAvailableNights(
+                            startDate,
+                            endDate
+                          );
 
-                    <input
-                      id="checkInInput"
-                      type="date"
-                      className="h-input"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
+                          // Check if the range meets the minimum requirement
+                          // At least 6 days (5 nights)
+                          setRange([startDate, endDate]);
+                          setCheckInDate(startDate.toISOString().split("T")[0]);
+                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setNights(availableNights);
+                          setIsCalendarOpen(false);
+                        } else {
+                          setRange(date);
+                        }
+                      }}
+                      disabledDate={(date) => {
+                        const dateString = date.toISOString().split("T")[0];
+
+                        const isUnavailable = unavailableDates.some(
+                          (d) => d.toISOString().split("T")[0] === dateString
+                        );
+
+                        const minDate = new Date();
+
+                        return date < minDate || isUnavailable;
+                      }}
+                      className="h-input-container d-flex align-items-center justify-content-between"
+                      format="dd-MM-yyyy"
+                      placeholder="dd-MM-yyyy"
+                      // disabledDate={disabledDate}
+                      cleanable={false}
+                      caretAs={() => (
+                        <img src={calendarIcon} height={24} width={24} />
+                      )}
                     />
                   </div>
                 </div>
@@ -241,29 +312,52 @@ const Reserve = () => {
                   <label className="h-form-label" style={{ color: "#5D5D5D" }}>
                     Check-out
                   </label>
+                  <div className="res_field_sec">
+                    <p
+                      className={
+                        checkInDate ? "_res_inpu_value" : "place_res_inpu_value"
+                      }
+                    >
+                      {checkOutDate ? checkOutDate : "Date"}
+                    </p>
+                    <DateRangePicker
+                      showHeader={false}
+                      showMeridiem={false}
+                      value={range}
+                      placement="bottomEnd"
+                      showOneCalendar={isMobile} // This will be true on mobile, false on desktop
+                      onChange={(date: any) => {
+                        if (date && date[0] && date[1]) {
+                          const startDate = new Date(date[0]);
+                          const endDate = new Date(date[1]);
 
-                  <div
-                    className="h-input-container d-flex align-items-center justify-content-between"
-                    onClick={() =>
-                      document.getElementById("checkOutInput")?.click()
-                    }
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <img src={calendarIcon} height={24} width={24} />
-                      <span style={{ color: checkOut ? "#000" : "#5D5D5D" }}>
-                        {checkOut
-                          ? new Date(checkOut).toLocaleDateString()
-                          : "dd-mm-yyyy"}
-                      </span>
-                    </div>
+                          // Count only available nights
+                          const availableNights = countAvailableNights(
+                            startDate,
+                            endDate
+                          );
 
-                    <input
-                      id="checkOutInput"
-                      type="date"
-                      className="h-input"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      min={checkIn || new Date().toISOString().split("T")[0]}
+                          setRange([startDate, endDate]);
+                          setCheckInDate(startDate.toISOString().split("T")[0]);
+                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setNights(availableNights);
+                          setIsCalendarOpen(false);
+                        } else {
+                          setRange(date);
+                        }
+                      }}
+                      // onChange={setCheckOutDate}
+                      className="h-input-container d-flex align-items-center justify-content-between"
+                      format="dd-MM-yyyy"
+                      placeholder="dd-MM-yyyy"
+                      disabledDate={(date) =>
+                        disabledDate(date) ||
+                        (checkInDate ? date <= checkInDate : false)
+                      }
+                      cleanable={false}
+                      caretAs={() => (
+                        <img src={calendarIcon} height={24} width={24} />
+                      )}
                     />
                   </div>
                 </div>
@@ -293,11 +387,17 @@ const Reserve = () => {
                     type="button"
                     className="guest-btn"
                     style={{ color: "#5D5D5D" }}
-                    onClick={() => setGuests(guests + 1)}
+                    onClick={() => setGuests((prev) => Math.min(8, prev + 1))}
+                    disabled={guests >= 8}
                   >
                     +
                   </button>
                 </div>
+                {guests >= 8 && (
+                  <small className="mt-1 d-block" style={{ color: "gray" }}>
+                    Maximum 8 guests allowed
+                  </small>
+                )}
               </div>
 
               {/* Price */}
@@ -313,12 +413,15 @@ const Reserve = () => {
                 className="mb-4 h-form-booknow-2"
                 style={{ backgroundColor: "#000" }}
                 onClick={() => {
-                  if (!checkIn || !checkOut || guests < 1) {
+                  if (!checkInDate || !checkOutDate || guests < 1) {
                     alert("Please fill in all required fields");
                     return;
                   }
 
-                  const url = `https://checkout.lodgify.com/${language}/villastrias/506741/reservation?adults=${guests}&currency=${currency}&slug=villastrias&arrival=${checkIn}&departure=${checkOut}`;
+                  const formattedCheckIn = formatDateForLodgify(checkInDate);
+                  const formattedCheckOut = formatDateForLodgify(checkOutDate);
+
+                  const url = `https://checkout.lodgify.com/${language}/villastrias/506741/reservation?adults=${guests}&currency=${currency}&slug=villastrias&arrival=${formattedCheckIn}&departure=${formattedCheckOut}`;
 
                   window.open(url);
                 }}

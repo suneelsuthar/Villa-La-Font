@@ -12,7 +12,21 @@ import gallery6 from "/src/assets/images/gallery6.png";
 import gallery7 from "/src/assets/images/gallery7.png";
 import gallery8 from "/src/assets/images/gallery8.png";
 import gallery9 from "/src/assets/images/gallery9.png";
+// Dynamically import ALL images from folder
 
+const images = import.meta.glob("/src/assets/gallery/*.{png,jpg,jpeg,webp}", {
+  eager: true,
+});
+
+const galleryPics: GalleryImage[] = Object.keys(images).map((key, index) => {
+  return {
+    id: index,
+    src: (images[key] as any).default,
+    alt: key.split("/").pop() || `Gallery Image ${index + 1}`,
+  };
+});
+
+console.log(galleryPics);
 interface GalleryImage {
   id: number;
   src: string;
@@ -42,7 +56,7 @@ const Gallery: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false); // Full gallery modal
   const [lightboxOpen, setLightboxOpen] = useState(false); // Airbnb-style lightbox
   const [currentIndex, setCurrentIndex] = useState(0);
-
+  const [type, settype] = useState("gallery");
   // Drag / pinch state
   const [scale, setScale] = useState(1);
   const [x, setX] = useState(0);
@@ -62,7 +76,8 @@ const Gallery: React.FC = () => {
   // -----------------------------------------------------------
   // Open/Close Lightbox
   // -----------------------------------------------------------
-  const openLightbox = (index: number) => {
+  const openLightbox = (index: number, type: string) => {
+    settype(type);
     setCurrentIndex(index);
     setLightboxOpen(true);
     document.body.style.overflow = "hidden";
@@ -81,11 +96,13 @@ const Gallery: React.FC = () => {
   // Navigate Lightbox Slides
   // -----------------------------------------------------------
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % galleryImages.length);
+    setCurrentIndex((prev) =>
+      prev === (type === "gallery" ? galleryImages.length - 1 : galleryPics.length - 1) ? 0 : prev + 1
+    );
   };
   const prevSlide = () => {
     setCurrentIndex((prev) =>
-      prev === 0 ? galleryImages.length - 1 : prev - 1
+      prev === 0 ? (type === "gallery" ? galleryImages.length - 1 : galleryPics.length - 1) : prev - 1
     );
   };
 
@@ -105,7 +122,7 @@ const Gallery: React.FC = () => {
             <div
               key={image.id}
               className="gallery-item"
-              onClick={() => openLightbox(index)}
+              onClick={() => openLightbox(index, "gallery")}
             >
               <img src={image.src} alt={image.alt} className="img-fluid" />
             </div>
@@ -140,11 +157,11 @@ const Gallery: React.FC = () => {
               {/* Full Grid */}
               <div className="container">
                 <div className="gallery-grid full-gallery-grid">
-                  {galleryImages.map((image, idx) => (
+                  {galleryPics.map((image, idx) => (
                     <div
                       key={image.id}
                       className="gallery-item full-gallery-item"
-                      onClick={() => openLightbox(idx)}
+                      onClick={() => openLightbox(idx, "full")}
                     >
                       <img
                         src={image.src}
@@ -177,10 +194,10 @@ const Gallery: React.FC = () => {
               {/* Top Bar */}
               <div className="airbnb-lightbox-top">
                 <button className="airbnb-close" onClick={closeLightbox}>
-                  <IoIosArrowBack size={22} />
+                  <IoIosArrowBack size={22} color="black" />
                 </button>
                 <div className="airbnb-counter">
-                  {currentIndex + 1} / {galleryImages.length}
+                  {currentIndex + 1} / {type === "gallery" ? galleryImages.length : galleryPics.length}
                 </div>
                 <div style={{ width: 30 }} />
               </div>
@@ -202,7 +219,7 @@ const Gallery: React.FC = () => {
               >
                 <motion.img
                   key={currentIndex}
-                  src={galleryImages[currentIndex].src}
+                  src={type === "gallery" ? galleryImages[currentIndex].src : galleryPics[currentIndex].src}
                   alt=""
                   className="airbnb-lightbox-image"
                   style={{ scale }}
@@ -288,8 +305,8 @@ const Gallery: React.FC = () => {
           z-index: 4000;
         }
         .airbnb-close {
-          background: rgba(0,0,0,0.4);
-          border: 1px solid #fff;
+          background: #ffffff;
+          border: 1px solid #000000;
           color: #fff;
           border-radius: 50%;
           display:flex;
@@ -298,7 +315,7 @@ const Gallery: React.FC = () => {
           height:50px;
           width:50px
         }
-        .airbnb-counter { color: #fff; font-size: 18px; }
+        .airbnb-counter { color: #000; font-size: 18px; }
 
         .lightbox-image-wrapper {
           width: 100%;
@@ -306,6 +323,7 @@ const Gallery: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
+          background-color:white
         }
         .airbnb-lightbox-image {
           max-width: 100%;
@@ -330,12 +348,13 @@ const Gallery: React.FC = () => {
           width: 55px;
           height: 55px;
           border-radius: 50%;
-          border: 1px solid #fff;
-          color: #fff;
+          border: 1px solid;
+          // color: #fff;
           font-size: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
+          padding-bottom:5px
         }
 
         /* Mobile adjustments */
@@ -343,7 +362,7 @@ const Gallery: React.FC = () => {
           .desktop-only { display: none !important; }
           .airbnb-lightbox-image { width: 100%; height: 100%; max-height: 92vh; }
           .airbnb-lightbox-top { top: 12px; left: 12px; right: 12px; }
-          .airbnb-counter { font-size: 16px; }
+          .airbnb-counter { font-size: 16px;color:black }
           .airbnb-close { padding: 0px;display:flex;align-items:center;justify-content:center;height:40px;width:40px }
         }
       `}</style>

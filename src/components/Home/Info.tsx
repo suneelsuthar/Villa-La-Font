@@ -32,7 +32,7 @@ const AmenitiesSection = () => {
           <Col lg={5} md={12} className="mb-md-4 mb-md-0">
             <h2 className="villa-heading">ESCAPE TO THE HILLS OF MALLORCA</h2>
           </Col>
-          <Col lg={7} md={12} className="mb-md-0">
+          <Col lg={7} md={12} className="mb-md-4 mb-md-0">
             <p className="villa-description">
               Tucked into the peaceful hills just above Pollença and only 4 km
               from the sparkling beaches of northern Mallorca, Villa La Font is
@@ -44,7 +44,7 @@ const AmenitiesSection = () => {
 
         {/* Info Cards */}
         <Row className="align-items-center">
-          <Col lg={5} md={12} className="mb-4 mb-md-4 mb-sm-0">
+          <Col lg={5} md={12} className="mb-4 mb-md-0 mb-sm-0">
             <Row className="g-3">
               <InfoCard imgSrc={guestsImg} number={8} label="Guests" />
               <InfoCard imgSrc={bedRoomImg} number={5} label="Bedrooms" />

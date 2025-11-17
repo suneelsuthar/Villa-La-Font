@@ -25,7 +25,7 @@ export const useAppContext = () => useContext(AppContext);
 
 export const AppProvider: React.FC<{ children: any }> = ({ children }) => {
   const [language, setLanguage] = useState("en");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("EUR");
   const [availabilities, setAvailabilities] = useState<any>([]);
   // Debug log when values change
   useEffect(() => {
