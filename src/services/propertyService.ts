@@ -76,27 +76,21 @@ class PropertyService {
     }
   }
   async checkPropertyAvailability(propertyId: number = 713163): Promise<any> {
-    const options = {
-      method: 'GET',
-      url: `${LODGIFY_CONFIG.BASE_URL}/availability/${propertyId}`,
-      params: { includeDetails: false },
-      headers: {
-        accept: 'application/json',
-        'X-ApiKey': LODGIFY_CONFIG.API_KEY,
-      },
-    };
+    const url = `https://ovkqzyxnrskitdzzikxc.supabase.co/functions/v1/villa-la-bookings?propertyId=${propertyId}&start=2025-01-01&end=2026-12-31&includeDetails=false`;
 
     try {
-      console.log('Fetching property availability from API...');
-      const response = await axios.request(options);
-      console.log('Successfully fetched availability data');
+      console.log("Fetching property availability from API...");
+      const response = await axios.get(url);
+      console.log("Successfully fetched availability data");
       return response.data;
     } catch (error) {
-      console.error('Error fetching availability data, using mock data:', error);
+      console.error(
+        "Error fetching availability data, using mock data:",
+        error
+      );
       return Mock_availabilities;
     }
   }
-
 
   // async getRates(
   //   startDate: string,
