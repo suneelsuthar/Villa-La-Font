@@ -75,8 +75,8 @@ class PropertyService {
       throw new Error("Failed to fetch property availability");
     }
   }
-  async checkPropertyAvailability(propertyId: number = 713163): Promise<any> {
-    const url = `https://ovkqzyxnrskitdzzikxc.supabase.co/functions/v1/villa-la-bookings?propertyId=${propertyId}&start=2025-01-01&end=2026-12-31&includeDetails=false`;
+  async checkPropertyAvailability(propertyId: number = 506741): Promise<any> {
+    const url = `https://ovkqzyxnrskitdzzikxc.supabase.co/functions/v1/villa-la-bookings?propertyId=${propertyId}&start=2025-01-01&end=2026-12-31&includeDetails=true`;
 
     try {
       console.log("Fetching property availability from API...");
@@ -88,7 +88,7 @@ class PropertyService {
         "Error fetching availability data, using mock data:",
         error
       );
-      return Mock_availabilities;
+      return [];
     }
   }
 

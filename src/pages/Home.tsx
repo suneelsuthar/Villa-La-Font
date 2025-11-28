@@ -38,7 +38,6 @@ const Home: React.FC = () => {
       try {
         const data = await propertyService.checkPropertyAvailability();
         setAvailabilities(data);
-        console.log("Property Availability:", data);
       } catch (error) {
         console.error("Error fetching property availability:", error);
       }

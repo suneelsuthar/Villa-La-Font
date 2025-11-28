@@ -54,38 +54,52 @@ const Hero = () => {
   const [checkOutDate, setCheckOutDate] = useState<any>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
-  useEffect(() => {
-    if (!availabilities || !availabilities[0]?.periods) return;
 
-    const unavailable: Date[] = [];
-    const available: Date[] = [];
-    const booked: Date[] = [];
+  useEffect(() => {
+    if (!availabilities || availabilities.length === 0) {
+      return;
+    }
+
+    if (!availabilities[0]?.periods) {
+      return;
+    }
+
+    const unavailableDateStrings = new Set<string>();
 
     availabilities[0].periods.forEach((period: AvailabilityPeriod) => {
-      const start = new Date(period.start);
-      const end = new Date(period.end);
-
-      // Loop through each date in range
-      const loopEnd = new Date(end);
-      loopEnd.setDate(loopEnd.getDate() + 1);
-
       const hasBookings = period.bookings?.length > 0;
 
-      for (let d = new Date(start); d < loopEnd; d.setDate(d.getDate() + 1)) {
-        const day = new Date(d);
+      // Work with date strings directly to avoid timezone issues
+      const [startYear, startMonth, startDay] = period.start
+        .split("-")
+        .map(Number);
+      const [endYear, endMonth, endDay] = period.end.split("-").map(Number);
 
-        if (hasBookings) {
-          booked.push(day);
-          unavailable.push(day);
-        } else if (period.available === 0 || period.closed_period) {
-          unavailable.push(day);
-        } else {
-          available.push(day);
+      let currentDate = new Date(startYear, startMonth - 1, startDay);
+      const endDate = new Date(endYear, endMonth - 1, endDay);
+
+      while (currentDate <= endDate) {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const day = String(currentDate.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
+
+        if (hasBookings || period.available === 0 || period.closed_period) {
+          unavailableDateStrings.add(dateStr);
         }
+
+        currentDate.setDate(currentDate.getDate() + 1);
       }
     });
 
-    setUnavailableDates(unavailable);
+    // Convert to Date objects for state (using local timezone)
+    const unavailableDatesArray = Array.from(unavailableDateStrings).map(
+      (dateStr) => {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      }
+    );
+    setUnavailableDates(unavailableDatesArray);
   }, [availabilities]);
   useEffect(() => {
     const handleResize = () => {
@@ -96,21 +110,30 @@ const Hero = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Helper to convert Date to YYYY-MM-DD string in local timezone
+  const formatDateToLocalString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const isDateDisabled = (date: Date): boolean => {
+    const dateString = formatDateToLocalString(date);
+    return unavailableDates.some(
+      (d) => formatDateToLocalString(d) === dateString
+    );
+  };
+
   const countAvailableNights = (startDate: Date, endDate: Date): number => {
     let count = 0;
     const current = new Date(startDate);
 
     // Loop through each day in the range
     while (current <= endDate) {
-      const dateString = current.toISOString().split("T")[0];
-      const isAvailable = !unavailableDates.some(
-        (d) => d.toISOString().split("T")[0] === dateString
-      );
-
-      if (isAvailable) {
+      if (!isDateDisabled(current)) {
         count++;
       }
-
       current.setDate(current.getDate() + 1);
     }
 
@@ -210,11 +233,6 @@ const Hero = () => {
                       showOneCalendar={isMobile} // This will be true on mobile, false on desktop
                       value={range}
                       onChange={(date: any) => {
-                        const prevButton = document.querySelector(
-                          ".rs-calendar-header-backward"
-                        );
-                        console.log("Found:", prevButton);
-
                         if (date && date[0] && date[1]) {
                           const startDate = new Date(date[0]);
                           const endDate = new Date(date[1]);
@@ -225,31 +243,24 @@ const Hero = () => {
                             endDate
                           );
 
-                          // Check if the range meets the minimum requirement
-                          // At least 6 days (5 nights)
+                          // Format dates using local timezone
+                          const formattedStartDate =
+                            formatDateToLocalString(startDate);
+                          const formattedEndDate =
+                            formatDateToLocalString(endDate);
+
                           setRange([startDate, endDate]);
-                          setCheckInDate(startDate.toISOString().split("T")[0]);
-                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setCheckInDate(formattedStartDate);
+                          setCheckOutDate(formattedEndDate);
                           setNights(availableNights);
                         } else {
                           setRange(date);
                         }
                       }}
-                      disabledDate={(date) => {
-                        const dateString = date.toISOString().split("T")[0];
-
-                        const isUnavailable = unavailableDates.some(
-                          (d) => d.toISOString().split("T")[0] === dateString
-                        );
-
-                        const minDate = new Date();
-
-                        return date < minDate || isUnavailable;
-                      }}
+                      disabledDate={isDateDisabled}
                       className="h-input-container d-flex align-items-center justify-content-between"
                       format="dd-MM-yyyy"
                       placeholder="dd-MM-yyyy"
-                      // disabledDate={disabledDate}
                       cleanable={false}
                       caretAs={() => (
                         <img src={calendarIcon} height={24} width={24} />
@@ -289,29 +300,24 @@ const Hero = () => {
                             endDate
                           );
 
+                          // Format dates using local timezone
+                          const formattedStartDate =
+                            formatDateToLocalString(startDate);
+                          const formattedEndDate =
+                            formatDateToLocalString(endDate);
+
                           setRange([startDate, endDate]);
-                          setCheckInDate(startDate.toISOString().split("T")[0]);
-                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setCheckInDate(formattedStartDate);
+                          setCheckOutDate(formattedEndDate);
                           setNights(availableNights);
                         } else {
                           setRange(date);
                         }
                       }}
-                      // onChange={setCheckOutDate}
                       className="h-input-container d-flex align-items-center justify-content-between"
                       format="dd-MM-yyyy"
                       placeholder="dd-MM-yyyy"
-                      disabledDate={(date) => {
-                        const dateString = date.toISOString().split("T")[0];
-
-                        const isUnavailable = unavailableDates.some(
-                          (d) => d.toISOString().split("T")[0] === dateString
-                        );
-
-                        const minDate = new Date();
-
-                        return date < minDate || isUnavailable;
-                      }}
+                      disabledDate={isDateDisabled}
                       cleanable={false}
                       caretAs={() => (
                         <img src={calendarIcon} height={24} width={24} />
@@ -452,7 +458,7 @@ const Hero = () => {
           width: 100%;
           height: 100%;
           cursor: "pointer";
-         
+
 
 
         }
@@ -506,7 +512,7 @@ const Hero = () => {
         }
         /* ✅ Responsive adjustments */
         @media (max-width: 991px) {
-         
+
         .h-subtitle{
         font-size:16px !important
         }
@@ -535,7 +541,7 @@ const Hero = () => {
         }
 
         @media (max-width: 768px) {
- 
+
           .hero-subtitle {
             font-size: 15px;
             line-height: 1.4;
@@ -580,7 +586,7 @@ const Hero = () => {
             .css-hd63sv{
             margin-top:30px
             }
-           
+
 
           .hero-subtitle {
             font-size: 16px;

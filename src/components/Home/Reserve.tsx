@@ -39,39 +39,70 @@ const Reserve = () => {
      available, and booked dates.
   -------------------------------------------------- */
   useEffect(() => {
-    if (!availabilities || !availabilities[0]?.periods) return;
+    if (!availabilities || availabilities.length === 0) {
+      return;
+    }
 
-    const unavailable: Date[] = [];
-    const available: Date[] = [];
-    const booked: Date[] = [];
+    if (!availabilities[0]?.periods) {
+      return;
+    }
+
+    const unavailableDateStrings = new Set<string>();
+    const availableDateStrings = new Set<string>();
+    const bookedDateStrings = new Set<string>();
 
     availabilities[0].periods.forEach((period: AvailabilityPeriod) => {
-      const start = new Date(period.start);
-      const end = new Date(period.end);
-
-      // Loop through each date in range
-      const loopEnd = new Date(end);
-      loopEnd.setDate(loopEnd.getDate() + 1);
-
       const hasBookings = period.bookings?.length > 0;
 
-      for (let d = new Date(start); d < loopEnd; d.setDate(d.getDate() + 1)) {
-        const day = new Date(d);
+      // Work with date strings directly to avoid timezone issues
+      const [startYear, startMonth, startDay] = period.start
+        .split("-")
+        .map(Number);
+      const [endYear, endMonth, endDay] = period.end.split("-").map(Number);
+
+      let currentDate = new Date(startYear, startMonth - 1, startDay);
+      const endDate = new Date(endYear, endMonth - 1, endDay);
+
+      while (currentDate <= endDate) {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const day = String(currentDate.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
 
         if (hasBookings) {
-          booked.push(day);
-          unavailable.push(day);
+          bookedDateStrings.add(dateStr);
+          unavailableDateStrings.add(dateStr);
         } else if (period.available === 0 || period.closed_period) {
-          unavailable.push(day);
+          unavailableDateStrings.add(dateStr);
         } else {
-          available.push(day);
+          availableDateStrings.add(dateStr);
         }
+
+        currentDate.setDate(currentDate.getDate() + 1);
       }
     });
 
-    setBookedDates(booked);
-    setUnavailableDates(unavailable);
-    setAvailableDates(available);
+    // Convert to Date objects for state (using local timezone)
+    const unavailableDatesArray = Array.from(unavailableDateStrings).map(
+      (dateStr) => {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      }
+    );
+    const availableDatesArray = Array.from(availableDateStrings).map(
+      (dateStr) => {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      }
+    );
+    const bookedDatesArray = Array.from(bookedDateStrings).map((dateStr) => {
+      const [year, month, day] = dateStr.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    });
+
+    setBookedDates(bookedDatesArray);
+    setUnavailableDates(unavailableDatesArray);
+    setAvailableDates(availableDatesArray);
   }, [availabilities]);
   useEffect(() => {
     const handleResize = () => {
@@ -82,18 +113,29 @@ const Reserve = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
   /* -------------------------------------------------
+     Helper Functions
+  -------------------------------------------------- */
+  // Helper to convert Date to YYYY-MM-DD string in local timezone
+  const formatDateToLocalString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  /* -------------------------------------------------
      Calendar Styling Helpers
   -------------------------------------------------- */
   const tileContent = ({ date, view }: { date: Date; view: string }) => {
     if (view !== "month") return null;
 
-    const dateString = date.toISOString().split("T")[0];
+    const dateString = formatDateToLocalString(date);
 
     const isUnavailable = unavailableDates.some(
-      (d) => d.toISOString().split("T")[0] === dateString
+      (d) => formatDateToLocalString(d) === dateString
     );
     const isAvailable = availableDates.some(
-      (d) => d.toISOString().split("T")[0] === dateString
+      (d) => formatDateToLocalString(d) === dateString
     );
 
     if (isUnavailable) return <div className="unavailable-date" />;
@@ -105,14 +147,14 @@ const Reserve = () => {
   const tileClassName = ({ date, view }: { date: Date; view: string }) => {
     if (view !== "month") return "res-day";
 
-    const dateString = date.toISOString().split("T")[0];
+    const dateString = formatDateToLocalString(date);
     const classes = ["res-day"];
 
     const isUnavailable = unavailableDates.some(
-      (d) => d.toISOString().split("T")[0] === dateString
+      (d) => formatDateToLocalString(d) === dateString
     );
     const isBooked = bookedDates.some(
-      (d) => d.toISOString().split("T")[0] === dateString
+      (d) => formatDateToLocalString(d) === dateString
     );
 
     if (isBooked) classes.push("res-selected");
@@ -125,20 +167,23 @@ const Reserve = () => {
   const tileDisabled = ({ date, view }: { date: Date; view: string }) => {
     if (view !== "month") return false;
 
-    const dateString = date.toISOString().split("T")[0];
+    const dateString = formatDateToLocalString(date);
     return unavailableDates.some(
-      (d) => d.toISOString().split("T")[0] === dateString
+      (d) => formatDateToLocalString(d) === dateString
+    );
+  };
+
+  const isDateDisabled = (date: Date): boolean => {
+    const dateString = formatDateToLocalString(date);
+    return unavailableDates.some(
+      (d) => formatDateToLocalString(d) === dateString
     );
   };
 
   const disabledDate = (date: Date) => {
-    const dateString = date.toISOString().split("T")[0];
-    const isUnavailable = unavailableDates.some(
-      (d) => d.toISOString().split("T")[0] === dateString
-    );
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time part to compare dates only
-    return date < today || date.getFullYear() < 2025 || isUnavailable;
+    today.setHours(0, 0, 0, 0);
+    return date < today || date.getFullYear() < 2025 || isDateDisabled(date);
   };
 
   const countAvailableNights = (startDate: Date, endDate: Date): number => {
@@ -147,15 +192,9 @@ const Reserve = () => {
 
     // Loop through each day in the range
     while (current <= endDate) {
-      const dateString = current.toISOString().split("T")[0];
-      const isAvailable = !unavailableDates.some(
-        (d) => d.toISOString().split("T")[0] === dateString
-      );
-
-      if (isAvailable) {
+      if (!isDateDisabled(current)) {
         count++;
       }
-
       current.setDate(current.getDate() + 1);
     }
 
@@ -273,32 +312,25 @@ const Reserve = () => {
                             endDate
                           );
 
-                          // Check if the range meets the minimum requirement
-                          // At least 6 days (5 nights)
+                          // Format dates using local timezone
+                          const formattedStartDate =
+                            formatDateToLocalString(startDate);
+                          const formattedEndDate =
+                            formatDateToLocalString(endDate);
+
                           setRange([startDate, endDate]);
-                          setCheckInDate(startDate.toISOString().split("T")[0]);
-                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setCheckInDate(formattedStartDate);
+                          setCheckOutDate(formattedEndDate);
                           setNights(availableNights);
                           setIsCalendarOpen(false);
                         } else {
                           setRange(date);
                         }
                       }}
-                      disabledDate={(date) => {
-                        const dateString = date.toISOString().split("T")[0];
-
-                        const isUnavailable = unavailableDates.some(
-                          (d) => d.toISOString().split("T")[0] === dateString
-                        );
-
-                        const minDate = new Date();
-
-                        return date < minDate || isUnavailable;
-                      }}
+                      shouldDisableDate={(date) => isDateDisabled(date)}
                       className="h-input-container d-flex align-items-center justify-content-between"
                       format="dd-MM-yyyy"
                       placeholder="dd-MM-yyyy"
-                      // disabledDate={disabledDate}
                       cleanable={false}
                       caretAs={() => (
                         <img src={calendarIcon} height={24} width={24} />
@@ -337,23 +369,25 @@ const Reserve = () => {
                             endDate
                           );
 
+                          // Format dates using local timezone
+                          const formattedStartDate =
+                            formatDateToLocalString(startDate);
+                          const formattedEndDate =
+                            formatDateToLocalString(endDate);
+
                           setRange([startDate, endDate]);
-                          setCheckInDate(startDate.toISOString().split("T")[0]);
-                          setCheckOutDate(endDate.toISOString().split("T")[0]);
+                          setCheckInDate(formattedStartDate);
+                          setCheckOutDate(formattedEndDate);
                           setNights(availableNights);
                           setIsCalendarOpen(false);
                         } else {
                           setRange(date);
                         }
                       }}
-                      // onChange={setCheckOutDate}
                       className="h-input-container d-flex align-items-center justify-content-between"
                       format="dd-MM-yyyy"
                       placeholder="dd-MM-yyyy"
-                      disabledDate={(date) =>
-                        disabledDate(date) ||
-                        (checkInDate ? date <= checkInDate : false)
-                      }
+                      shouldDisableDate={(date) => isDateDisabled(date)}
                       cleanable={false}
                       caretAs={() => (
                         <img src={calendarIcon} height={24} width={24} />
